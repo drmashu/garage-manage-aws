@@ -1,0 +1,246 @@
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  UpdateGarageState:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: UpdateGarageState
+      CodeUri: src/UpdateGarageState
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          GARAGES_TABLE_NAME: !Ref garages
+          GARAGES_TABLE_ARN: !GetAtt garages.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref garages
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.mts
+        External:
+          - '@aws-sdk/*'
+          - aws-sdk
+        Minify: false
+  UpdateGarageStateLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${UpdateGarageState}
+  garages:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: GarageId
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: GarageId
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  ControlShutter:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ControlShutter
+      CodeUri: src/ControlShutter
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          GARAGES_TABLE_NAME: !Ref garages
+          GARAGES_TABLE_ARN: !GetAtt garages.Arn
+          USERS_TABLE_NAME: !Ref users
+          USERS_TABLE_ARN: !GetAtt users.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref garages
+        - DynamoDBCrudPolicy:
+            TableName: !Ref users
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.mts
+        External:
+          - '@aws-sdk/*'
+          - aws-sdk
+        Minify: false
+  ControlShutterLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ControlShutter}
+  ControlLight:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ControlLight
+      CodeUri: src/ControlLight
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          GARAGES_TABLE_NAME: !Ref garages
+          GARAGES_TABLE_ARN: !GetAtt garages.Arn
+          USERS_TABLE_NAME: !Ref users
+          USERS_TABLE_ARN: !GetAtt users.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref garages
+        - DynamoDBCrudPolicy:
+            TableName: !Ref users
+      Events:
+        ApiGETgarageIdlightcommand:
+          Type: Api
+          Properties:
+            Path: /{garageId}/light/{command}
+            Method: GET
+            RestApiId: !Ref Api
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.mts
+        External:
+          - '@aws-sdk/*'
+          - aws-sdk
+        Minify: false
+  ControlLightLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ControlLight}
+  ControlFan:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ControlFan
+      CodeUri: src/ControlFan
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          GARAGES_TABLE_NAME: !Ref garages
+          GARAGES_TABLE_ARN: !GetAtt garages.Arn
+          USERS_TABLE_NAME: !Ref users
+          USERS_TABLE_ARN: !GetAtt users.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref garages
+        - DynamoDBCrudPolicy:
+            TableName: !Ref users
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.mts
+        External:
+          - '@aws-sdk/*'
+          - aws-sdk
+        Minify: false
+  ControlFanLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ControlFan}
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub
+        - ${ResourceName} From Stack ${AWS::StackName}
+        - ResourceName: Api
+      StageName: Prod
+      DefinitionBody:
+        openapi: '3.0'
+        info: {}
+        paths:
+          /garages/{garageId}/shutter/{command}:
+            get:
+              responses: {}
+          /garages/{garageId}/light/{command}:
+            get:
+              responses: {}
+          /garages/{garageId}/fan/{command}:
+            get:
+              responses: {}
+          /garages/{garageId}:
+            get:
+              responses: {}
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+  users:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  GetGarageState:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: GetGarageState
+      CodeUri: src/GetGarageState
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref users
+          USERS_TABLE_ARN: !GetAtt users.Arn
+          GARAGES_TABLE_NAME: !Ref garages
+          GARAGES_TABLE_ARN: !GetAtt garages.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref users
+        - DynamoDBCrudPolicy:
+            TableName: !Ref garages
+      Events:
+        ApiGETgarageId:
+          Type: Api
+          Properties:
+            Path: /{garageId}
+            Method: GET
+            RestApiId: !Ref Api
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.mts
+        External:
+          - '@aws-sdk/*'
+          - aws-sdk
+        Minify: false
+  GetGarageStateLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${GetGarageState}
