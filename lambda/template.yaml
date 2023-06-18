@@ -216,6 +216,20 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetGarageState.Arn}/invocations
               responses: {}
+          /garages/{garageId}/shutter:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetShutterPosition.Arn}/invocations
+              responses: {}
+          /garages/{garageId}/setup:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SetupGarage.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
       TracingEnabled: true
   users:
@@ -274,3 +288,87 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       LogGroupName: !Sub /aws/lambda/${GetGarageState}
+  GetShutterPosition:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: GetShutterPosition
+      CodeUri: src/GetShutterPosition
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        ApiGETgaragesgarageIdshutter:
+          Type: Api
+          Properties:
+            Path: /garages/{garageId}/shutter
+            Method: GET
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref users
+          USERS_TABLE_ARN: !GetAtt users.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref users
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.mts
+        External:
+          - '@aws-sdk/*'
+          - aws-sdk
+        Minify: false
+  GetShutterPositionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${GetShutterPosition}
+  SetupGarage:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: SetupGarage
+      CodeUri: src/SetupGarage
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        ApiGETgaragesgarageIdsetup:
+          Type: Api
+          Properties:
+            Path: /garages/{garageId}/setup
+            Method: GET
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref users
+          USERS_TABLE_ARN: !GetAtt users.Arn
+          GARAGES_TABLE_NAME: !Ref garages
+          GARAGES_TABLE_ARN: !GetAtt garages.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref users
+        - DynamoDBCrudPolicy:
+            TableName: !Ref garages
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - index.mts
+        External:
+          - '@aws-sdk/*'
+          - aws-sdk
+        Minify: false
+  SetupGarageLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${SetupGarage}

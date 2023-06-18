@@ -1,2 +1,5 @@
 /certs
 /pico/certs
+node_modules
+lambda/.aws-sam
+lambda/.aws-composer

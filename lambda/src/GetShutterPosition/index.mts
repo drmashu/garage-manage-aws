@@ -4,6 +4,7 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
 } from '@aws-sdk/lib-dynamodb'
+import { IoTDataPlaneClient, PublishCommand, PublishCommandInput, PayloadFormatIndicator } from '@aws-sdk/client-iot-data-plane'
 
 const config: DynamoDBClientConfig = {};
 const dbClient = new DynamoDBClient(config);
@@ -18,21 +19,17 @@ class PathParameters {
 
 export const handler: Handler<HttpEvent, object> = async (event: HttpEvent, context:Context) => {
   // Log the event argument for debugging and for use in local development.
-  console.log(JSON.stringify(event, undefined, 2));
-  console.log("GetGarageState : " + JSON.stringify(event, undefined, 2));
-  let result:any = {};
-  try {
-    const command = new GetCommand({
-      TableName: 'lambda-garages-7HDMLSDDW3TR',
-      Key: {
-        GarageId: event.pathParameters.garageId,
-      },
-    })
-    const output = await documentClient.send(command)
-    console.log('SUCCESS (get item):', output)
-    result = output.Item;
-  } catch (err) {
-    console.log('ERROR:', err)
-  }
-  return result;
+  console.log("GetShutterPosition" + JSON.stringify(event, undefined, 2));
+
+
+  const client = new IoTDataPlaneClient({ region: "ap-northeast-1" });
+  const input = {
+    topic: event.pathParameters.garageId + "/shutter", // required
+    payload: new TextEncoder().encode("getPosition"),
+    payloadFormatIndicator: PayloadFormatIndicator.UTF8_DATA,
+    messageExpiry: 60,
+  } as PublishCommandInput;
+  const command = new PublishCommand(input);
+  const response = await client.send(command);  
+  return {};
 };
