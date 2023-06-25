@@ -19,17 +19,24 @@ class PathParameters {
 
 export const handler: Handler<HttpEvent, object> = async (event: HttpEvent, context:Context) => {
   // Log the event argument for debugging and for use in local development.
-  console.log("GetShutterPosition" + JSON.stringify(event, undefined, 2));
-
+  console.log("start RequestGarageState " + event.pathParameters.garageId) ;
 
   const client = new IoTDataPlaneClient({ region: "ap-northeast-1" });
-  const input = {
-    topic: event.pathParameters.garageId + "/shutter", // required
-    payload: new TextEncoder().encode("getPosition"),
-    payloadFormatIndicator: PayloadFormatIndicator.UTF8_DATA,
-    messageExpiry: 60,
-  } as PublishCommandInput;
-  const command = new PublishCommand(input);
+
+  const command = new PublishCommand({
+    topic: event.pathParameters.garageId + "/shutter",
+    payload: new TextEncoder().encode("update"),
+    payloadFormatIndicator: "UTF8_DATA",
+    qos: 1,
+    contentType: "text/plain",
+  });
+
   const response = await client.send(command);  
+  console.log("RequestGarageState response " + JSON.stringify(response));
+  if (response.$metadata.httpStatusCode == 200) {
+    console.log("RequestGarageState success.");
+  } else {
+    console.log("RequestGarageState failed.");
+  }
   return {};
 };

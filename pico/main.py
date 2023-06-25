@@ -253,7 +253,7 @@ async def mqcallback(topic, msg):
             PushOpenButton(0)
         elif msg == 'down':
             PushCloseButton(0)
-        elif msg == 'getPosition':
+        elif msg == 'update':
             status_changed = True
     else:
         print('invalid messages.')
